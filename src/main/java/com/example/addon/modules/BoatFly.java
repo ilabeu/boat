@@ -1,66 +1,87 @@
 package com.example.addon.modules;
 
-import com.example.addon.AddonTemplate;
-import meteordevelopment.meteorclient.events.render.Render3DEvent;
-import meteordevelopment.meteorclient.renderer.ShapeMode;
-import meteordevelopment.meteorclient.settings.ColorSetting;
+import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.utils.render.color.Color;
-import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
+import net.minecraft.entity.vehicle.AbstractBoatEntity;
+import net.minecraft.util.math.Vec3d;
 
-public class ModuleExample extends Module {
-    private final SettingGroup sgGeneral = this.settings.getDefaultGroup();
-    private final SettingGroup sgRender = this.settings.createGroup("Render");
+/**
+ * Boat Fly - fly in a boat. For servers with no anticheat.
+ */
+public class BoatFly extends Module {
+    private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    /**
-     * Example setting.
-     * The {@code name} parameter should be in kebab-case.
-     * If you want to access the setting from another class, simply make the setting {@code public}, and use
-     * {@link meteordevelopment.meteorclient.systems.modules.Modules#get(Class)} to access the {@link Module} object.
-     */
-    private final Setting<Double> scale = sgGeneral.add(new DoubleSetting.Builder()
-        .name("scale")
-        .description("The size of the marker.")
-        .defaultValue(2.0d)
-        .range(0.5d, 10.0d)
+    private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("speed")
+        .description("Horizontal flight speed in blocks per second.")
+        .defaultValue(10)
+        .min(1)
+        .max(50)
+        .sliderMax(30)
         .build()
     );
 
-    private final Setting<SettingColor> color = sgRender.add(new ColorSetting.Builder()
-        .name("color")
-        .description("The color of the marker.")
-        .defaultValue(Color.MAGENTA)
+    private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("vertical-speed")
+        .description("Vertical speed when holding jump or sneak.")
+        .defaultValue(5)
+        .min(1)
+        .max(20)
+        .sliderMax(15)
         .build()
     );
 
-    /**
-     * The {@code name} parameter should be in kebab-case.
-     */
-    public ModuleExample() {
-        super(AddonTemplate.CATEGORY, "world-origin", "An example module that highlights the center of the world.");
+    private static final double GRAVITY_PER_TICK = 0.08;
+
+    public BoatFly() {
+        super(Categories.Movement, "boat-fly", "Fly while in a boat. For servers with no anticheat.");
     }
 
-    /**
-     * Example event handling method.
-     * Requires {@link AddonTemplate#getPackage()} to be setup correctly, otherwise the game will crash whenever the module is enabled.
-     */
-    @EventHandler
-    private void onRender3d(Render3DEvent event) {
-        // Create & stretch the marker object
-        Box marker = new Box(BlockPos.ORIGIN);
-        marker = marker.stretch(
-            scale.get() * marker.getLengthX(),
-            scale.get() * marker.getLengthY(),
-            scale.get() * marker.getLengthZ()
-        );
+    @Override
+    public void onActivate() {
+        if (mc.player != null && !(mc.player.getVehicle() instanceof AbstractBoatEntity)) {
+            info("Get in a boat first.");
+        }
+    }
 
-        // Render the marker based on the color setting
-        event.renderer.box(marker, color.get(), color.get(), ShapeMode.Both, 0);
+    @EventHandler
+    private void onTick(TickEvent.Pre event) {
+        if (mc.player == null) return;
+        if (!(mc.player.getVehicle() instanceof AbstractBoatEntity boat)) return;
+
+        double horizontal = speed.get() / 20.0;
+        double vertical = verticalSpeed.get() / 20.0;
+
+        float forward = mc.player.input.movementForward;
+        float strafe = mc.player.input.movementSideways;
+
+        float yaw = boat.getYaw() * (float) (Math.PI / 180);
+        double dx = -Math.sin(yaw) * forward - Math.cos(yaw) * strafe;
+        double dz = Math.cos(yaw) * forward - Math.sin(yaw) * strafe;
+
+        double hLen = Math.sqrt(dx * dx + dz * dz);
+        if (hLen > 1e-6) {
+            dx = dx / hLen * horizontal;
+            dz = dz / hLen * horizontal;
+        } else {
+            dx = 0;
+            dz = 0;
+        }
+
+        double dy;
+        if (mc.options.jumpKey.isPressed()) {
+            dy = vertical;
+        } else if (mc.options.sneakKey.isPressed()) {
+            dy = -vertical;
+        } else {
+            dy = GRAVITY_PER_TICK;
+        }
+
+        boat.setVelocity(new Vec3d(dx, dy, dz));
     }
 }
