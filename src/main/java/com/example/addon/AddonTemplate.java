@@ -1,9 +1,9 @@
 package com.ilabeu.addon;
 
-import com.example.addon.commands.CommandExample;
-import com.example.addon.hud.HudExample;
-import com.example.addon.modules.BoatFly;
-import com.example.addon.modules.ModuleExample;
+import com.ilabeu.addon.commands.Commandilabeu;
+import com.ilabeu.addon.hud.Hudilabeu;
+import com.ilabeu.addon.modules.BoatFly;
+import com.ilabeu.addon.modules.Moduleilabeu;
 import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
@@ -16,22 +16,22 @@ import org.slf4j.Logger;
 
 public class AddonTemplate extends MeteorAddon {
     public static final Logger LOG = LogUtils.getLogger();
-    public static final Category CATEGORY = new Category("Example");
-    public static final HudGroup HUD_GROUP = new HudGroup("Example");
+    public static final Category CATEGORY = new Category("ilabeu");
+    public static final HudGroup HUD_GROUP = new HudGroup("ilabeu");
 
     @Override
     public void onInitialize() {
         LOG.info("Initializing Meteor Addon Template");
 
         // Modules
-        Modules.get().add(new ModuleExample());
+        Modules.get().add(new Moduleilabeu());
         Modules.get().add(new BoatFly());
 
         // Commands
-        Commands.add(new CommandExample());
+        Commands.add(new Commandilabeu());
 
         // HUD
-        Hud.get().register(HudExample.INFO);
+        Hud.get().register(Hudilabeu.INFO);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class AddonTemplate extends MeteorAddon {
 
     @Override
     public String getPackage() {
-        return "com.example.addon";
+        return "com.ilabeu.addon";
     }
 
     @Override
