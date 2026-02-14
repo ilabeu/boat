@@ -1,4 +1,4 @@
-package com.example.addon.modules;
+package com.ilabeu.addon.modules;
 
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.DoubleSetting;
