@@ -1,6 +1,6 @@
-package com.example.addon.mixin;
+package com.ilabeu.addon.mixin;
 
-import com.example.addon.AddonTemplate;
+import com.ilabeu.addon.AddonTemplate;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.RunArgs;
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Example Mixin class.
+ * ilabeu Mixin class.
  * For more resources, visit:
  * <ul>
  * <li><a href="https://fabricmc.net/wiki/tutorial:mixin_introduction">The FabricMC wiki</a></li>
@@ -20,12 +20,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * </ul>
  */
 @Mixin(MinecraftClient.class)
-public abstract class ExampleMixin {
+public abstract class ilabeuMixin {
     /**
-     * Example Mixin injection targeting the {@code <init>} method (the constructor) at {@code TAIL} (end of method).
+     * ilabeu Mixin injection targeting the {@code <init>} method (the constructor) at {@code TAIL} (end of method).
      */
     @Inject(method = "<init>", at = @At("TAIL"))
     private void onGameLoaded(RunArgs args, CallbackInfo ci) {
-        AddonTemplate.LOG.info("Hello from ExampleMixin!");
+        AddonTemplate.LOG.info("Hello from ilabeuMixin!");
     }
 }
