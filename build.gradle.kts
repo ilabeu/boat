@@ -27,7 +27,7 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-api:0.119.4+1.21.4")
 
     // Meteor Client
-    modImplementation("meteordevelopment:meteor-client:+:dev")
+    modImplementation("meteordevelopment:meteor-client:+")
 
     // Annotation processors for Meteor's event system - CRITICAL FIX
     annotationProcessor("org.ow2.asm:asm:9.7")
