@@ -1,10 +1,10 @@
 package com.ilabeu.modules;
 
 import com.ilabeu.addon.AddonTemplate;
-import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.vehicle.BoatEntity;
 
 public class BoatFly extends Module {
@@ -13,7 +13,7 @@ public class BoatFly extends Module {
     // Speed settings
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("speed")
-        .description("The horizontal speed of the boat.")
+        .description("Horizontal boat speed.")
         .defaultValue(1.0)
         .min(0.1)
         .sliderMax(5.0)
@@ -22,27 +22,26 @@ public class BoatFly extends Module {
 
     private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
         .name("vertical-speed")
-        .description("The vertical speed when holding spacebar.")
+        .description("Vertical speed (jump/sneak).")
         .defaultValue(1.0)
         .min(0.1)
         .sliderMax(5.0)
         .build()
     );
 
-    // Acceleration settings - similar to ElytraFly
+    // Acceleration
     private final Setting<Boolean> acceleration = sgGeneral.add(new BoolSetting.Builder()
         .name("acceleration")
-        .description("Enables smooth acceleration for boat movement.")
+        .description("Smooth acceleration.")
         .defaultValue(false)
         .build()
     );
 
     private final Setting<Double> accelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
         .name("acceleration-speed")
-        .description("How fast the boat accelerates.")
+        .description("Acceleration rate.")
         .defaultValue(0.1)
         .min(0.01)
-        .max(1.0)
         .sliderMax(0.5)
         .visible(acceleration::get)
         .build()
@@ -50,7 +49,7 @@ public class BoatFly extends Module {
 
     private final Setting<Double> maxSpeed = sgGeneral.add(new DoubleSetting.Builder()
         .name("max-speed")
-        .description("Maximum speed when using acceleration.")
+        .description("Max accelerated speed.")
         .defaultValue(2.0)
         .min(0.1)
         .sliderMax(10.0)
@@ -60,7 +59,7 @@ public class BoatFly extends Module {
 
     private final Setting<Boolean> deceleration = sgGeneral.add(new BoolSetting.Builder()
         .name("deceleration")
-        .description("Enables smooth deceleration when stopping.")
+        .description("Smooth deceleration.")
         .defaultValue(true)
         .visible(acceleration::get)
         .build()
@@ -68,20 +67,18 @@ public class BoatFly extends Module {
 
     private final Setting<Double> decelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
         .name("deceleration-speed")
-        .description("How fast the boat decelerates.")
+        .description("Deceleration rate.")
         .defaultValue(0.05)
         .min(0.01)
-        .max(1.0)
         .sliderMax(0.5)
         .visible(() -> acceleration.get() && deceleration.get())
         .build()
     );
 
-    // Current velocity for acceleration
     private double currentVelocity = 0.0;
 
     public BoatFly() {
-        super(AddonTemplate.CATEGORY, "boat-destroyer", "Destroys boats with style.");
+        super(AddonTemplate.CATEGORY, "boat-fly", "Allows boats to fly.");
     }
 
     @Override
@@ -91,87 +88,26 @@ public class BoatFly extends Module {
 
     @Override
     public void onDeactivate() {
+        restoreBoat();
         currentVelocity = 0.0;
     }
 
-    @meteordevelopment.orbit.EventHandler
+    @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (!isActive()) return;
-        if (mc.player == null || !(mc.player.getVehicle() instanceof BoatEntity)) {
-            return;
-        }
+        if (mc.player == null) return;
+        if (!(mc.player.getVehicle() instanceof BoatEntity boat)) return;
 
-        BoatEntity boat = (BoatEntity) mc.player.getVehicle();
+        boat.setNoGravity(true);
 
-        // Get movement input
-        boolean isMoving = mc.options.forwardKey.isPressed() || 
-                          mc.options.backKey.isPressed() || 
-                          mc.options.leftKey.isPressed() || 
-                          mc.options.rightKey.isPressed();
+        boolean moving =
+            mc.options.forwardKey.isPressed() ||
+            mc.options.backKey.isPressed() ||
+            mc.options.leftKey.isPressed() ||
+            mc.options.rightKey.isPressed();
 
-        // Calculate target velocity
-        double targetSpeed = speed.get();
+        double targetSpeed;
 
         if (acceleration.get()) {
-            // Acceleration logic
-            if (isMoving) {
-                // Accelerate
-                currentVelocity = Math.min(currentVelocity + accelerationSpeed.get(), maxSpeed.get());
-            } else if (deceleration.get()) {
-                // Decelerate
-                currentVelocity = Math.max(currentVelocity - decelerationSpeed.get(), 0.0);
-            } else {
-                // Instant stop if deceleration is disabled
-                currentVelocity = 0.0;
-            }
-            targetSpeed = currentVelocity;
-        } else {
-            // No acceleration - instant speed
-            targetSpeed = isMoving ? speed.get() : 0.0;
-        }
-
-        // Apply movement - WASD strafes in all directions, boat stays still otherwise
-        double velocityX = 0;
-        double velocityZ = 0;
-        double velocityY = 0;
-
-        // Get current yaw for directional movement
-        double yaw = Math.toRadians(mc.player.getYaw());
-
-        // W = Forward strafe (relative to player facing)
-        if (mc.options.forwardKey.isPressed()) {
-            velocityX -= Math.sin(yaw) * targetSpeed;
-            velocityZ += Math.cos(yaw) * targetSpeed;
-        }
-
-        // S = Backward strafe (relative to player facing)
-        if (mc.options.backKey.isPressed()) {
-            velocityX += Math.sin(yaw) * targetSpeed;
-            velocityZ -= Math.cos(yaw) * targetSpeed;
-        }
-
-        // A = Left strafe (relative to player facing)
-        if (mc.options.leftKey.isPressed()) {
-            velocityX -= Math.cos(yaw) * targetSpeed;
-            velocityZ -= Math.sin(yaw) * targetSpeed;
-        }
-
-        // D = Right strafe (relative to player facing)
-        if (mc.options.rightKey.isPressed()) {
-            velocityX += Math.cos(yaw) * targetSpeed;
-            velocityZ += Math.sin(yaw) * targetSpeed;
-        }
-
-        // Vertical movement - only spacebar goes up
-        if (mc.options.jumpKey.isPressed()) {
-            velocityY = verticalSpeed.get();
-        } else if (mc.options.sneakKey.isPressed()) {
-            velocityY = -verticalSpeed.get();
-        }
-
-        boat.setVelocity(velocityX, velocityY, velocityZ);
-
-        // Disable gravity
-        boat.setNoGravity(true);
-    }
-}
+            if (moving) {
+                currentVelocity = Math.min(
+                    currentVelocity + accelerationSpeed.get(),
