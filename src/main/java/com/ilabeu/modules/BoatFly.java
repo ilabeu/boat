@@ -94,8 +94,10 @@ public class BoatFly extends Module {
         BoatEntity boat = (BoatEntity) mc.player.getVehicle();
 
         // Get movement input
-        boolean isMoving = mc.player.input.movementForward != 0 || 
-                          mc.player.input.movementSideways != 0;
+        boolean isMoving = mc.options.forwardKey.isPressed() || 
+                          mc.options.backKey.isPressed() || 
+                          mc.options.leftKey.isPressed() || 
+                          mc.options.rightKey.isPressed();
 
         // Calculate target velocity
         double targetSpeed = speed.get();
@@ -119,8 +121,8 @@ public class BoatFly extends Module {
         }
 
         // Apply movement
-        double forward = mc.player.input.movementForward;
-        double strafe = mc.player.input.movementSideways;
+        double forward = (mc.options.forwardKey.isPressed() ? 1 : 0) - (mc.options.backKey.isPressed() ? 1 : 0);
+        double strafe = (mc.options.rightKey.isPressed() ? 1 : 0) - (mc.options.leftKey.isPressed() ? 1 : 0);
 
         double yaw = Math.toRadians(mc.player.getYaw());
         
