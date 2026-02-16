@@ -1,103 +1,38 @@
-package com.ilabeu.modules;
+plugins {
+    id 'fabric-loom' version '1.14.10'
+}
 
-import com.ilabeu.addon.AddonTemplate;
-import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.settings.*;
-import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.vehicle.BoatEntity;
+group = 'com.ilabeu'
+version = '0.2.0'
 
-public class BoatFly extends Module {
-    private final SettingGroup sgGeneral = settings.getDefaultGroup();
+repositories {
+    maven { url 'https://maven.meteordev.org/releases' }
+    maven { url 'https://maven.meteordev.org/snapshots' }
+    mavenCentral()
+}
 
-    private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("speed")
-        .description("Horizontal boat speed.")
-        .defaultValue(1.0)
-        .min(0.1)
-        .sliderMax(5.0)
-        .build()
-    );
+dependencies {
+    minecraft 'com.mojang:minecraft:1.21.4'
+    mappings 'net.fabricmc:yarn:1.21.4+build.7:v2'
+    modImplementation 'net.fabricmc:fabric-loader:0.16.9'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.119.4+1.21.4'
+    modImplementation 'meteordevelopment:meteor-client:0.5.9'
+}
 
-    private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("vertical-speed")
-        .description("Vertical speed (jump/sneak).")
-        .defaultValue(1.0)
-        .min(0.1)
-        .sliderMax(5.0)
-        .build()
-    );
+processResources {
+    inputs.property 'version', project.version
+    filteringCharset 'UTF-8'
 
-    private final Setting<Boolean> acceleration = sgGeneral.add(new BoolSetting.Builder()
-        .name("acceleration")
-        .description("Smooth acceleration.")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<Double> accelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("acceleration-speed")
-        .description("Acceleration rate.")
-        .defaultValue(0.1)
-        .min(0.01)
-        .sliderMax(0.5)
-        .visible(acceleration::get)
-        .build()
-    );
-
-    private final Setting<Double> maxSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("max-speed")
-        .description("Max accelerated speed.")
-        .defaultValue(2.0)
-        .min(0.1)
-        .sliderMax(10.0)
-        .visible(acceleration::get)
-        .build()
-    );
-
-    private final Setting<Boolean> deceleration = sgGeneral.add(new BoolSetting.Builder()
-        .name("deceleration")
-        .description("Smooth deceleration.")
-        .defaultValue(true)
-        .visible(acceleration::get)
-        .build()
-    );
-
-    private final Setting<Double> decelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("deceleration-speed")
-        .description("Deceleration rate.")
-        .defaultValue(0.05)
-        .min(0.01)
-        .sliderMax(0.5)
-        .visible(() -> acceleration.get() && deceleration.get())
-        .build()
-    );
-
-    private double currentVelocity = 0.0;
-
-    public BoatFly() {
-        super(AddonTemplate.CATEGORY, "boat-fly", "Allows boats to fly.");
+    filesMatching('fabric.mod.json') {
+        expand 'version': project.version
     }
+}
 
-    @Override
-    public void onActivate() {
-        currentVelocity = 0.0;
-    }
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
 
-    @Override
-    public void onDeactivate() {
-        restoreBoat();
-        currentVelocity = 0.0;
-    }
-
-    @EventHandler
-    private void onTick(TickEvent.Pre event) {
-        if (mc.player == null) return;
-        if (!(mc.player.getVehicle() instanceof BoatEntity)) return;
-
-        BoatEntity boat = (BoatEntity) mc.player.getVehicle();
-        boat.setNoGravity(true);
-
-        boolean moving =
-            mc.options.forwardKey.isPressed() ||
-            mc.options.backKey.isPressed()
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
