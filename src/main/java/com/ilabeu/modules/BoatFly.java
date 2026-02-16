@@ -6,11 +6,11 @@ import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.vehicle.BoatEntity;
+import net.minecraft.util.math.Vec3d;
 
 public class BoatFly extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    // Speed settings
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("speed")
         .description("Horizontal boat speed.")
@@ -22,92 +22,52 @@ public class BoatFly extends Module {
 
     private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
         .name("vertical-speed")
-        .description("Vertical speed (jump/sneak).")
-        .defaultValue(1.0)
+        .description("Vertical movement speed.")
+        .defaultValue(0.8)
         .min(0.1)
         .sliderMax(5.0)
         .build()
     );
 
-    // Acceleration
-    private final Setting<Boolean> acceleration = sgGeneral.add(new BoolSetting.Builder()
-        .name("acceleration")
-        .description("Smooth acceleration.")
-        .defaultValue(false)
-        .build()
-    );
-
-    private final Setting<Double> accelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("acceleration-speed")
-        .description("Acceleration rate.")
-        .defaultValue(0.1)
-        .min(0.01)
-        .sliderMax(0.5)
-        .visible(acceleration::get)
-        .build()
-    );
-
-    private final Setting<Double> maxSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("max-speed")
-        .description("Max accelerated speed.")
-        .defaultValue(2.0)
-        .min(0.1)
-        .sliderMax(10.0)
-        .visible(acceleration::get)
-        .build()
-    );
-
-    private final Setting<Boolean> deceleration = sgGeneral.add(new BoolSetting.Builder()
-        .name("deceleration")
-        .description("Smooth deceleration.")
-        .defaultValue(true)
-        .visible(acceleration::get)
-        .build()
-    );
-
-    private final Setting<Double> decelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("deceleration-speed")
-        .description("Deceleration rate.")
-        .defaultValue(0.05)
-        .min(0.01)
-        .sliderMax(0.5)
-        .visible(() -> acceleration.get() && deceleration.get())
-        .build()
-    );
-
-    private double currentVelocity = 0.0;
-
     public BoatFly() {
         super(AddonTemplate.CATEGORY, "boat-fly", "Allows boats to fly.");
-    }
-
-    @Override
-    public void onActivate() {
-        currentVelocity = 0.0;
-    }
-
-    @Override
-    public void onDeactivate() {
-        restoreBoat();
-        currentVelocity = 0.0;
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) return;
-        if (!(mc.player.getVehicle() instanceof BoatEntity boat)) return;
+        if (!(mc.player.getVehicle() instanceof BoatEntity)) return;
 
+        BoatEntity boat = (BoatEntity) mc.player.getVehicle();
         boat.setNoGravity(true);
 
-        boolean moving =
-            mc.options.forwardKey.isPressed() ||
-            mc.options.backKey.isPressed() ||
-            mc.options.leftKey.isPressed() ||
-            mc.options.rightKey.isPressed();
+        Vec3d velocity = boat.getVelocity();
 
-        double targetSpeed;
+        double forward = 0;
+        double vertical = 0;
 
-        if (acceleration.get()) {
-            if (moving) {
-                currentVelocity = Math.min(
-                    currentVelocity + accelerationSpeed.get(),
+        if (mc.options.forwardKey.isPressed()) forward += speed.get();
+        if (mc.options.backKey.isPressed()) forward -= speed.get();
+
+        if (mc.options.jumpKey.isPressed()) vertical += verticalSpeed.get();
+        if (mc.options.sneakKey.isPressed()) vertical -= verticalSpeed.get();
+
+        Vec3d look = mc.player.getRotationVec(1.0f);
+
+        Vec3d newVelocity = new Vec3d(
+            look.x * forward,
+            vertical,
+            look.z * forward
+        );
+
+        boat.setVelocity(newVelocity);
+        boat.velocityModified = true;
+    }
+
+    @Override
+    public void onDeactivate() {
+        if (mc.player != null && mc.player.getVehicle() instanceof BoatEntity boat) {
+            boat.setNoGravity(false);
+        }
+    }
+}
