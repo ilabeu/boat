@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "ilabeuhax",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "ilabeu Hax",
   "description": "A Meteor Client addon with BoatFly module.",
   "authors": [
