@@ -13,7 +13,16 @@ public class BoatFly extends Module {
     // Speed settings
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("speed")
-        .description("The speed of the boat.")
+        .description("The horizontal speed of the boat.")
+        .defaultValue(1.0)
+        .min(0.1)
+        .sliderMax(5.0)
+        .build()
+    );
+
+    private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("vertical-speed")
+        .description("The vertical speed when holding spacebar.")
         .defaultValue(1.0)
         .min(0.1)
         .sliderMax(5.0)
@@ -120,27 +129,43 @@ public class BoatFly extends Module {
             targetSpeed = isMoving ? speed.get() : 0.0;
         }
 
-        // Apply movement
-        double forward = (mc.options.forwardKey.isPressed() ? 1 : 0) - (mc.options.backKey.isPressed() ? 1 : 0);
-        double strafe = (mc.options.rightKey.isPressed() ? 1 : 0) - (mc.options.leftKey.isPressed() ? 1 : 0);
-
-        double yaw = Math.toRadians(mc.player.getYaw());
-        
+        // Apply movement - WASD strafes in all directions, boat stays still otherwise
         double velocityX = 0;
         double velocityZ = 0;
         double velocityY = 0;
 
-        // Horizontal movement (only when moving forward/back/left/right)
-        if (forward != 0 || strafe != 0) {
-            velocityX = (forward * Math.sin(yaw) + strafe * Math.cos(yaw)) * targetSpeed;
-            velocityZ = (forward * Math.cos(yaw) - strafe * Math.sin(yaw)) * targetSpeed;
+        // Get current yaw for directional movement
+        double yaw = Math.toRadians(mc.player.getYaw());
+
+        // W = Forward strafe (relative to player facing)
+        if (mc.options.forwardKey.isPressed()) {
+            velocityX -= Math.sin(yaw) * targetSpeed;
+            velocityZ += Math.cos(yaw) * targetSpeed;
         }
 
-        // Vertical movement (only when pressing jump or sneak)
+        // S = Backward strafe (relative to player facing)
+        if (mc.options.backKey.isPressed()) {
+            velocityX += Math.sin(yaw) * targetSpeed;
+            velocityZ -= Math.cos(yaw) * targetSpeed;
+        }
+
+        // A = Left strafe (relative to player facing)
+        if (mc.options.leftKey.isPressed()) {
+            velocityX -= Math.cos(yaw) * targetSpeed;
+            velocityZ -= Math.sin(yaw) * targetSpeed;
+        }
+
+        // D = Right strafe (relative to player facing)
+        if (mc.options.rightKey.isPressed()) {
+            velocityX += Math.cos(yaw) * targetSpeed;
+            velocityZ += Math.sin(yaw) * targetSpeed;
+        }
+
+        // Vertical movement - only spacebar goes up
         if (mc.options.jumpKey.isPressed()) {
-            velocityY = targetSpeed;
+            velocityY = verticalSpeed.get();
         } else if (mc.options.sneakKey.isPressed()) {
-            velocityY = -targetSpeed;
+            velocityY = -verticalSpeed.get();
         }
 
         boat.setVelocity(velocityX, velocityY, velocityZ);
