@@ -1,9 +1,9 @@
 package com.ilabeu.modules;
 
+import com.ilabeu.addon.AddonTemplate;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.systems.modules.Categories;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.vehicle.BoatEntity;
 
@@ -81,7 +81,7 @@ public class BoatFly extends Module {
     private double currentVelocity = 0.0;
 
     public BoatFly() {
-        super(Categories.Movement, "boat-destroyer", "Destroys boats with style.");
+        super(AddonTemplate.CATEGORY, "boat-destroyer", "Destroys boats with style.");
     }
 
     @Override
