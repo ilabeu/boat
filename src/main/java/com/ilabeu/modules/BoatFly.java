@@ -1,8 +1,10 @@
 package com.ilabeu.addon.modules;
 
+import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.Categories;
+import meteordevelopment.orbit.EventHandler;
 import net.minecraft.entity.vehicle.BoatEntity;
 
 public class BoatFly extends Module {
@@ -70,7 +72,7 @@ public class BoatFly extends Module {
     private double currentVelocity = 0.0;
 
     public BoatFly() {
-        super(Categories.Movement, "boat-fly", "Allows you to fly with boats.");
+        super(Categories.Movement, "boat-destroyer", "Destroys boats with style.");
     }
 
     @Override
@@ -92,10 +94,8 @@ public class BoatFly extends Module {
         BoatEntity boat = (BoatEntity) mc.player.getVehicle();
 
         // Get movement input
-        boolean isMoving = mc.player.input.pressingForward || 
-                          mc.player.input.pressingBack || 
-                          mc.player.input.pressingLeft || 
-                          mc.player.input.pressingRight;
+        boolean isMoving = mc.player.input.movementForward != 0 || 
+                          mc.player.input.movementSideways != 0;
 
         // Calculate target velocity
         double targetSpeed = speed.get();
@@ -119,8 +119,8 @@ public class BoatFly extends Module {
         }
 
         // Apply movement
-        double forward = mc.player.input.pressingForward ? 1 : (mc.player.input.pressingBack ? -1 : 0);
-        double strafe = mc.player.input.pressingRight ? 1 : (mc.player.input.pressingLeft ? -1 : 0);
+        double forward = mc.player.input.movementForward;
+        double strafe = mc.player.input.movementSideways;
 
         double yaw = Math.toRadians(mc.player.getYaw());
         
