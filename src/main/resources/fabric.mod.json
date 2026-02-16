@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "id": "addon-template",
-  "version": "${version}",
-  "name": "Addon Template",
-  "description": "An addon template for Meteor Client addons.",
+  "id": "ilabeuhax",
+  "version": "0.1.0",
+  "name": "ilabeu Hax",
+  "description": "A Meteor Client addon with BoatFly module.",
   "authors": [
-    "seasnail"
+    "ilabeu"
   ],
   "contact": {
-    "sources": "https://github.com/MeteorDevelopment/meteor-addon-template"
+    "sources": "https://github.com/ilabeu/boat"
   },
   "icon": "assets/template/icon.png",
   "environment": "client",
@@ -30,7 +30,7 @@
   },
   "depends": {
     "java": ">=21",
-    "minecraft": ["${mc_version}"],
+    "minecraft": ">=1.21",
     "meteor-client": "*"
   }
 }
