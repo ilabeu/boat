@@ -1,4 +1,4 @@
-package com.ilabeu.addon.modules;
+package com.ilabeu.modules;
 
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
