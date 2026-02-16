@@ -10,7 +10,6 @@ import net.minecraft.entity.vehicle.BoatEntity;
 public class BoatFly extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    // Speed settings
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("speed")
         .description("Horizontal boat speed.")
@@ -29,7 +28,6 @@ public class BoatFly extends Module {
         .build()
     );
 
-    // Acceleration
     private final Setting<Boolean> acceleration = sgGeneral.add(new BoolSetting.Builder()
         .name("acceleration")
         .description("Smooth acceleration.")
@@ -95,72 +93,11 @@ public class BoatFly extends Module {
     @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null) return;
-        if (!(mc.player.getVehicle() instanceof BoatEntity boat)) return;
+        if (!(mc.player.getVehicle() instanceof BoatEntity)) return;
 
+        BoatEntity boat = (BoatEntity) mc.player.getVehicle();
         boat.setNoGravity(true);
 
         boolean moving =
             mc.options.forwardKey.isPressed() ||
-            mc.options.backKey.isPressed() ||
-            mc.options.leftKey.isPressed() ||
-            mc.options.rightKey.isPressed();
-
-        double targetSpeed;
-
-        if (acceleration.get()) {
-            if (moving) {
-                currentVelocity = Math.min(
-                    currentVelocity + accelerationSpeed.get(),
-                    maxSpeed.get()
-                );
-            } else if (deceleration.get()) {
-                currentVelocity = Math.max(
-                    currentVelocity - decelerationSpeed.get(),
-                    0.0
-                );
-            } else {
-                currentVelocity = 0.0;
-            }
-            targetSpeed = currentVelocity;
-        } else {
-            targetSpeed = moving ? speed.get() : 0.0;
-        }
-
-        double yaw = Math.toRadians(mc.player.getYaw());
-        double x = 0.0;
-        double y = 0.0;
-        double z = 0.0;
-
-        if (mc.options.forwardKey.isPressed()) {
-            x -= Math.sin(yaw) * targetSpeed;
-            z += Math.cos(yaw) * targetSpeed;
-        }
-        if (mc.options.backKey.isPressed()) {
-            x += Math.sin(yaw) * targetSpeed;
-            z -= Math.cos(yaw) * targetSpeed;
-        }
-        if (mc.options.leftKey.isPressed()) {
-            x -= Math.cos(yaw) * targetSpeed;
-            z -= Math.sin(yaw) * targetSpeed;
-        }
-        if (mc.options.rightKey.isPressed()) {
-            x += Math.cos(yaw) * targetSpeed;
-            z += Math.sin(yaw) * targetSpeed;
-        }
-
-        if (mc.options.jumpKey.isPressed()) {
-            y = verticalSpeed.get();
-        } else if (mc.options.sneakKey.isPressed()) {
-            y = -verticalSpeed.get();
-        }
-
-        boat.setVelocity(x, y, z);
-    }
-
-    private void restoreBoat() {
-        if (mc.player == null) return;
-        if (mc.player.getVehicle() instanceof BoatEntity boat) {
-            boat.setNoGravity(false);
-        }
-    }
-}
+            mc.options.backKey.isPressed()
