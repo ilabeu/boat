@@ -3,11 +3,11 @@ plugins {
     id("maven-publish")
 }
 
-version = project.property("mod_version") as String
-group = project.property("maven_group") as String
+version = "0.2.0"
+group = property("maven_group") as String
 
 base {
-    archivesName.set(project.property("archives_base_name") as String)
+    archivesName.set(property("archives_base_name") as String)
 }
 
 repositories {
@@ -19,18 +19,17 @@ repositories {
 }
 
 dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
-    mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
-    modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
+    minecraft("com.mojang:minecraft:1.21.4")
+    mappings("net.fabricmc:yarn:1.21.4+build.7:v2")
+    modImplementation("net.fabricmc:fabric-loader:0.16.9")
 
     // Fabric API
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:0.119.4+1.21.4")
 
     // Meteor Client
-    modImplementation("meteordevelopment:meteor-client:${project.property("meteor_version")}")
+    modImplementation("meteordevelopment:meteor-client:0.5.9-1.21.4")
 
-    // Annotation processors for Meteor's event system
+    // Annotation processors for Meteor's event system - CRITICAL FIX
     annotationProcessor("org.ow2.asm:asm:9.7")
     annotationProcessor("org.ow2.asm:asm-tree:9.7")
 }
