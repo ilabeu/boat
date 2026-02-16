@@ -4,17 +4,15 @@ plugins {
 }
 
 version = "0.2.0"
-group = property("maven_group") as String
+group = "com.ilabeu"
 
 base {
-    archivesName.set(property("archives_base_name") as String)
+    archivesName.set("ilabeuhax")
 }
 
 repositories {
-    maven {
-        name = "meteor-maven"
-        url = uri("https://maven.meteordev.org/releases")
-    }
+    maven("https://maven.meteordev.org/releases")
+    maven("https://maven.meteordev.org/snapshots")
     mavenCentral()
 }
 
@@ -22,29 +20,20 @@ dependencies {
     minecraft("com.mojang:minecraft:1.21.4")
     mappings("net.fabricmc:yarn:1.21.4+build.7:v2")
     modImplementation("net.fabricmc:fabric-loader:0.16.9")
-
-    // Fabric API
     modImplementation("net.fabricmc.fabric-api:fabric-api:0.119.4+1.21.4")
-
-    // Meteor Client
-    modImplementation("meteordevelopment:meteor-client:+")
-
-    // Annotation processors for Meteor's event system - CRITICAL FIX
-    annotationProcessor("org.ow2.asm:asm:9.7")
-    annotationProcessor("org.ow2.asm:asm-tree:9.7")
+    modImplementation("meteordevelopment:meteor-client:0.5.10-SNAPSHOT")
 }
 
 tasks.processResources {
-    inputs.property("version", project.version)
-
+    inputs.property("version", version)
     filesMatching("fabric.mod.json") {
-        expand("version" to project.version)
+        expand("version" to version)
     }
 }
 
 tasks.withType<JavaCompile> {
-    options.release.set(21)
     options.encoding = "UTF-8"
+    options.release.set(21)
 }
 
 java {
@@ -56,17 +45,5 @@ java {
 tasks.jar {
     from("LICENSE") {
         rename { "${it}_${base.archivesName.get()}" }
-    }
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("mavenJava") {
-            from(components["java"])
-        }
-    }
-
-    repositories {
-        // Add repositories to publish to here.
     }
 }
