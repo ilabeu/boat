@@ -1,11 +1,13 @@
 plugins {
-    alias(libs.plugins.fabric.loom)
+    id("fabric-loom") version "1.14.10"
+    id("maven-publish")
 }
 
+version = project.property("mod_version") as String
+group = project.property("maven_group") as String
+
 base {
-    archivesName = properties["archives_base_name"] as String
-    version = libs.versions.mod.version.get()
-    group = properties["maven_group"] as String
+    archivesName.set(project.property("archives_base_name") as String)
 }
 
 repositories {
@@ -13,55 +15,59 @@ repositories {
         name = "meteor-maven"
         url = uri("https://maven.meteordev.org/releases")
     }
-    maven {
-        name = "meteor-maven-snapshots"
-        url = uri("https://maven.meteordev.org/snapshots")
-    }
+    mavenCentral()
 }
 
 dependencies {
-    // Fabric
-    minecraft(libs.minecraft)
-    mappings(variantOf(libs.yarn) { classifier("v2") })
-    modImplementation(libs.fabric.loader)
+    // To change the versions see the gradle.properties file
+    minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
+    mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
+    modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
 
-    // Meteor
-    modImplementation(libs.meteor.client)
+    // Fabric API
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_version")}")
+
+    // Meteor Client
+    modImplementation("meteordevelopment:meteor-client:${project.property("meteor_version")}")
+
+    // Annotation processors for Meteor's event system
+    annotationProcessor("org.ow2.asm:asm:9.7")
+    annotationProcessor("org.ow2.asm:asm-tree:9.7")
 }
 
-tasks {
-    processResources {
-        val propertyMap = mapOf(
-            "version" to project.version,
-            "mc_version" to libs.versions.minecraft.get()
-        )
+tasks.processResources {
+    inputs.property("version", project.version)
 
-        inputs.properties(propertyMap)
+    filesMatching("fabric.mod.json") {
+        expand("version" to project.version)
+    }
+}
 
-        filteringCharset = "UTF-8"
+tasks.withType<JavaCompile> {
+    options.release.set(21)
+    options.encoding = "UTF-8"
+}
 
-        filesMatching("fabric.mod.json") {
-            expand(propertyMap)
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.jar {
+    from("LICENSE") {
+        rename { "${it}_${base.archivesName.get()}" }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
         }
     }
 
-    jar {
-        inputs.property("archivesName", project.base.archivesName.get())
-
-        from("LICENSE") {
-            rename { "${it}_${inputs.properties["archivesName"]}" }
-        }
-    }
-
-    java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
-    }
-
-    withType<JavaCompile> {
-        options.encoding = "UTF-8"
-        options.release = 21
-        options.compilerArgs.add("-Xlint:deprecation")
-        options.compilerArgs.add("-Xlint:unchecked")
+    repositories {
+        // Add repositories to publish to here.
     }
 }
