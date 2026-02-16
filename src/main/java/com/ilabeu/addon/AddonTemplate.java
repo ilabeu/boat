@@ -2,14 +2,12 @@ package com.ilabeu.addon;
 
 import com.ilabeu.addon.commands.Commandilabeu;
 import com.ilabeu.addon.hud.Hudilabeu;
-import com.ilabeu.addon.modules.BoatFly;
-import com.ilabeu.addon.modules.Moduleilabeu;
+import com.ilabeu.modules.BoatFly;
+import com.ilabeu.modules.Moduleilabeu;
 import com.mojang.logging.LogUtils;
-import meteordevelopment.meteorclient.addons.GithubRepo;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.commands.Commands;
 import meteordevelopment.meteorclient.systems.hud.Hud;
-import meteordevelopment.meteorclient.systems.hud.HudGroup;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import org.slf4j.Logger;
@@ -17,11 +15,10 @@ import org.slf4j.Logger;
 public class AddonTemplate extends MeteorAddon {
     public static final Logger LOG = LogUtils.getLogger();
     public static final Category CATEGORY = new Category("ilabeu");
-    public static final HudGroup HUD_GROUP = new HudGroup("ilabeu");
 
     @Override
     public void onInitialize() {
-        LOG.info("Initializing Meteor Addon Template");
+        LOG.info("Initializing ilabeu Addon");
 
         // Modules
         Modules.get().add(new Moduleilabeu());
@@ -42,10 +39,5 @@ public class AddonTemplate extends MeteorAddon {
     @Override
     public String getPackage() {
         return "com.ilabeu.addon";
-    }
-
-    @Override
-    public GithubRepo getRepo() {
-        return new GithubRepo("MeteorDevelopment", "meteor-addon-template");
     }
 }
