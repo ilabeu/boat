@@ -3,7 +3,6 @@ package com.ilabeu.addon;
 import com.ilabeu.addon.commands.Commandilabeu;
 import com.ilabeu.addon.hud.Hudilabeu;
 import com.ilabeu.modules.BoatFly;
-import com.ilabeu.modules.Moduleilabeu;
 import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.addons.MeteorAddon;
 import meteordevelopment.meteorclient.commands.Commands;
@@ -21,7 +20,6 @@ public class AddonTemplate extends MeteorAddon {
         LOG.info("Initializing ilabeu Addon");
 
         // Modules
-        Modules.get().add(new Moduleilabeu());
         Modules.get().add(new BoatFly());
 
         // Commands
