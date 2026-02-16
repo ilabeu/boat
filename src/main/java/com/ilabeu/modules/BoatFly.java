@@ -87,16 +87,16 @@ public class BoatFly extends Module {
     @Override
     public void onActivate() {
         currentVelocity = 0.0;
-        MeteorClient.EVENT_BUS.subscribe(this, TickEvent.Pre.class, this::onTick);
     }
 
     @Override
     public void onDeactivate() {
         currentVelocity = 0.0;
-        MeteorClient.EVENT_BUS.unsubscribe(this);
     }
 
+    @meteordevelopment.orbit.EventHandler
     private void onTick(TickEvent.Pre event) {
+        if (!isActive()) return;
         if (mc.player == null || !(mc.player.getVehicle() instanceof BoatEntity)) {
             return;
         }
