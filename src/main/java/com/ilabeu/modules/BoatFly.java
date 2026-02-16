@@ -1,10 +1,11 @@
 package com.ilabeu.modules;
 
 import com.ilabeu.addon.AddonTemplate;
+import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.IListener;
 import net.minecraft.entity.vehicle.BoatEntity;
 
 public class BoatFly extends Module {
@@ -84,17 +85,20 @@ public class BoatFly extends Module {
         super(AddonTemplate.CATEGORY, "boat-destroyer", "Destroys boats with style.");
     }
 
+    private final IListener tickListener = this::onTick;
+
     @Override
     public void onActivate() {
         currentVelocity = 0.0;
+        MeteorClient.EVENT_BUS.subscribe(tickListener);
     }
 
     @Override
     public void onDeactivate() {
         currentVelocity = 0.0;
+        MeteorClient.EVENT_BUS.unsubscribe(tickListener);
     }
 
-    @EventHandler
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || !(mc.player.getVehicle() instanceof BoatEntity)) {
             return;
