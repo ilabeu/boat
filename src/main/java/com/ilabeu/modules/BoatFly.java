@@ -1,87 +1,149 @@
 package com.ilabeu.addon.modules;
 
-import meteordevelopment.meteorclient.events.world.TickEvent;
-import meteordevelopment.meteorclient.settings.DoubleSetting;
-import meteordevelopment.meteorclient.settings.Setting;
-import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Categories;
+import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.vehicle.AbstractBoatEntity;
-import net.minecraft.util.math.Vec3d;
+import meteordevelopment.meteorclient.systems.modules.Categories;
+import net.minecraft.entity.vehicle.BoatEntity;
 
-/**
- * Boat Fly - fly in a boat. For servers with no anticheat.
- */
 public class BoatFly extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    // Speed settings
     private final Setting<Double> speed = sgGeneral.add(new DoubleSetting.Builder()
         .name("speed")
-        .description("Horizontal flight speed in blocks per second.")
-        .defaultValue(10)
-        .min(1)
-        .max(50)
-        .sliderMax(30)
+        .description("The speed of the boat.")
+        .defaultValue(1.0)
+        .min(0.1)
+        .sliderMax(5.0)
         .build()
     );
 
-    private final Setting<Double> verticalSpeed = sgGeneral.add(new DoubleSetting.Builder()
-        .name("vertical-speed")
-        .description("Vertical speed when holding jump or sneak.")
-        .defaultValue(5)
-        .min(1)
-        .max(20)
-        .sliderMax(15)
+    // Acceleration settings - similar to ElytraFly
+    private final Setting<Boolean> acceleration = sgGeneral.add(new BoolSetting.Builder()
+        .name("acceleration")
+        .description("Enables smooth acceleration for boat movement.")
+        .defaultValue(false)
         .build()
     );
 
-    private static final double GRAVITY_PER_TICK = 0.08;
+    private final Setting<Double> accelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("acceleration-speed")
+        .description("How fast the boat accelerates.")
+        .defaultValue(0.1)
+        .min(0.01)
+        .max(1.0)
+        .sliderMax(0.5)
+        .visible(acceleration::get)
+        .build()
+    );
+
+    private final Setting<Double> maxSpeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("max-speed")
+        .description("Maximum speed when using acceleration.")
+        .defaultValue(2.0)
+        .min(0.1)
+        .sliderMax(10.0)
+        .visible(acceleration::get)
+        .build()
+    );
+
+    private final Setting<Boolean> deceleration = sgGeneral.add(new BoolSetting.Builder()
+        .name("deceleration")
+        .description("Enables smooth deceleration when stopping.")
+        .defaultValue(true)
+        .visible(acceleration::get)
+        .build()
+    );
+
+    private final Setting<Double> decelerationSpeed = sgGeneral.add(new DoubleSetting.Builder()
+        .name("deceleration-speed")
+        .description("How fast the boat decelerates.")
+        .defaultValue(0.05)
+        .min(0.01)
+        .max(1.0)
+        .sliderMax(0.5)
+        .visible(() -> acceleration.get() && deceleration.get())
+        .build()
+    );
+
+    // Current velocity for acceleration
+    private double currentVelocity = 0.0;
 
     public BoatFly() {
-        super(Categories.Movement, "boat-fly", "Fly while in a boat. For servers with no anticheat.");
+        super(Categories.Movement, "boat-fly", "Allows you to fly with boats.");
     }
 
     @Override
     public void onActivate() {
-        if (mc.player != null && !(mc.player.getVehicle() instanceof AbstractBoatEntity)) {
-            info("Get in a boat first.");
-        }
+        currentVelocity = 0.0;
+    }
+
+    @Override
+    public void onDeactivate() {
+        currentVelocity = 0.0;
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null) return;
-        if (!(mc.player.getVehicle() instanceof AbstractBoatEntity boat)) return;
-
-        double horizontal = speed.get() / 20.0;
-        double vertical = verticalSpeed.get() / 20.0;
-
-        float forward = mc.player.input.movementForward;
-        float strafe = mc.player.input.movementSideways;
-
-        float yaw = boat.getYaw() * (float) (Math.PI / 180);
-        double dx = -Math.sin(yaw) * forward - Math.cos(yaw) * strafe;
-        double dz = Math.cos(yaw) * forward - Math.sin(yaw) * strafe;
-
-        double hLen = Math.sqrt(dx * dx + dz * dz);
-        if (hLen > 1e-6) {
-            dx = dx / hLen * horizontal;
-            dz = dz / hLen * horizontal;
-        } else {
-            dx = 0;
-            dz = 0;
+        if (mc.player == null || !(mc.player.getVehicle() instanceof BoatEntity)) {
+            return;
         }
 
-        double dy;
+        BoatEntity boat = (BoatEntity) mc.player.getVehicle();
+
+        // Get movement input
+        boolean isMoving = mc.player.input.pressingForward || 
+                          mc.player.input.pressingBack || 
+                          mc.player.input.pressingLeft || 
+                          mc.player.input.pressingRight;
+
+        // Calculate target velocity
+        double targetSpeed = speed.get();
+
+        if (acceleration.get()) {
+            // Acceleration logic
+            if (isMoving) {
+                // Accelerate
+                currentVelocity = Math.min(currentVelocity + accelerationSpeed.get(), maxSpeed.get());
+            } else if (deceleration.get()) {
+                // Decelerate
+                currentVelocity = Math.max(currentVelocity - decelerationSpeed.get(), 0.0);
+            } else {
+                // Instant stop if deceleration is disabled
+                currentVelocity = 0.0;
+            }
+            targetSpeed = currentVelocity;
+        } else {
+            // No acceleration - instant speed
+            targetSpeed = isMoving ? speed.get() : 0.0;
+        }
+
+        // Apply movement
+        double forward = mc.player.input.pressingForward ? 1 : (mc.player.input.pressingBack ? -1 : 0);
+        double strafe = mc.player.input.pressingRight ? 1 : (mc.player.input.pressingLeft ? -1 : 0);
+
+        double yaw = Math.toRadians(mc.player.getYaw());
+        
+        double velocityX = 0;
+        double velocityZ = 0;
+        double velocityY = 0;
+
+        // Horizontal movement (only when moving forward/back/left/right)
+        if (forward != 0 || strafe != 0) {
+            velocityX = (forward * Math.sin(yaw) + strafe * Math.cos(yaw)) * targetSpeed;
+            velocityZ = (forward * Math.cos(yaw) - strafe * Math.sin(yaw)) * targetSpeed;
+        }
+
+        // Vertical movement (only when pressing jump or sneak)
         if (mc.options.jumpKey.isPressed()) {
-            dy = vertical;
+            velocityY = targetSpeed;
         } else if (mc.options.sneakKey.isPressed()) {
-            dy = -vertical;
-        } else {
-            dy = GRAVITY_PER_TICK;
+            velocityY = -targetSpeed;
         }
 
-        boat.setVelocity(new Vec3d(dx, dy, dz));
+        boat.setVelocity(velocityX, velocityY, velocityZ);
+
+        // Disable gravity
+        boat.setNoGravity(true);
     }
 }
