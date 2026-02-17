@@ -5,7 +5,7 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.vehicle.BoatEntity;
+import net.minecraft.entity.vehicle.AbstractBoatEntity;  // FIXED: Changed from BoatEntity
 
 public class BoatFly extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -87,20 +87,33 @@ public class BoatFly extends Module {
     @Override
     public void onActivate() {
         currentVelocity = 0.0;
+        // FIXED: Enable no-gravity when activating
+        if (mc.player != null && mc.player.hasVehicle() && mc.player.getVehicle() instanceof AbstractBoatEntity) {
+            AbstractBoatEntity boat = (AbstractBoatEntity) mc.player.getVehicle();
+            boat.setNoGravity(true);
+        }
     }
 
     @Override
     public void onDeactivate() {
         currentVelocity = 0.0;
+        // FIXED: Restore gravity when disabling
+        if (mc.player != null && mc.player.hasVehicle() && mc.player.getVehicle() instanceof AbstractBoatEntity) {
+            AbstractBoatEntity boat = (AbstractBoatEntity) mc.player.getVehicle();
+            boat.setNoGravity(false);
+            boat.setVelocity(0, 0, 0);  // Stop the boat
+        }
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.player == null || !(mc.player.getVehicle() instanceof BoatEntity)) {
+        // FIXED: Added hasVehicle() check and changed to AbstractBoatEntity
+        if (mc.player == null || !mc.player.hasVehicle() || !(mc.player.getVehicle() instanceof AbstractBoatEntity)) {
             return;
         }
 
-        BoatEntity boat = (BoatEntity) mc.player.getVehicle();
+        // FIXED: Cast to AbstractBoatEntity instead of BoatEntity
+        AbstractBoatEntity boat = (AbstractBoatEntity) mc.player.getVehicle();
 
         // Get movement input
         boolean isMoving = mc.options.forwardKey.isPressed() || 
